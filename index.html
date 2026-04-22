@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小壁虎老師 FB 抽獎神器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 增加一點可愛的彈跳動畫 */
+        @keyframes pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: pop 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans">
+
+<div class="flex-grow p-4">
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden flex flex-col h-full">
+        <div class="bg-teal-600 p-6 text-white text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-wider relative z-10 flex items-center justify-center gap-3">
+                🦎 小壁虎老師 FB 抽獎神器
+            </h1>
+            <p class="opacity-90 mt-2 text-sm relative z-10">專屬留言篩選與抽獎工具</p>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
+            
+            <div class="flex flex-col h-full">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="font-bold text-gray-700 flex items-center">
+                        <span class="bg-gray-200 text-gray-700 w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">1</span>
+                        原始 FB 資料
+                    </label>
+                    <button onclick="document.getElementById('rawInput').value=''" class="text-xs text-red-400 hover:text-red-600 underline">清空</button>
+                </div>
+                <textarea id="rawInput" class="flex-grow w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-400 text-xs bg-gray-50 h-96" placeholder="請貼上包含「名字、留言、時間」的完整資料..."></textarea>
+                <p class="text-xs text-gray-400 mt-1">*請確保貼上的資料包含「留言內容」才能進行篩選</p>
+            </div>
+
+            <div class="flex flex-col h-full bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="font-bold text-gray-700 mb-4 text-center">🛠️ 篩選設定</h3>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">必含關鍵字 (通關密語)：</label>
+                    <input type="text" id="requiredKeyword" value="燒腦破解遊戲密碼" class="w-full p-2 border border-teal-300 rounded focus:outline-none focus:border-teal-500 text-sm font-bold text-teal-700">
+                </div>
+
+                <button onclick="processData()" class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded shadow mb-2 transition transform active:scale-95 flex items-center justify-center">
+                    <span>執行篩選</span>
+                    <span class="ml-2">⚡</span>
+                </button>
+                
+                <div id="statusMsg" class="text-xs text-center text-gray-500 mb-4 h-5">等待執行...</div>
+
+                <label class="font-bold text-red-500 mb-2 text-sm flex justify-between">
+                    <span>🚫 剔除區 (未留關鍵字)</span>
+                    <span id="rejectedCount" class="bg-red-100 text-red-600 px-2 rounded-full text-xs flex items-center">0人</span>
+                </label>
+                <textarea id="rejectedList" class="flex-grow w-full p-3 border border-red-200 rounded-lg text-sm text-red-400 bg-red-50 h-48" readonly placeholder="這裡會顯示不符合資格的人..."></textarea>
+            </div>
+
+            <div class="flex flex-col h-full">
+                <label class="font-bold text-teal-700 mb-2 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="bg-teal-100 text-teal-800 w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">2</span>
+                        ✅ 合格名單 (<span id="count">0</span>人)
+                    </div>
+                    <div class="flex items-center text-sm font-normal text-gray-500">
+                        <input type="checkbox" id="autoDedupe" checked class="mr-1 accent-teal-500"> 排除重複
+                    </div>
+                </label>
+                <textarea id="finalList" class="flex-grow w-full p-3 border border-teal-300 rounded-lg focus:outline-none bg-white text-gray-800 font-medium h-96 mb-4" placeholder="符合資格的人會出現在這..."></textarea>
+                
+                <div class="bg-teal-50 p-4 rounded-lg border border-teal-100 mt-auto">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-sm font-bold text-teal-800">抽出人數：</span>
+                        <input type="number" id="drawCount" value="1" min="1" class="w-16 p-1 text-center border border-teal-300 rounded font-bold">
+                    </div>
+                    <button onclick="drawWinner()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded shadow-lg transition transform active:scale-95 text-lg">
+                        🏆 立即抽獎
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="text-center p-4 text-gray-400 text-sm font-medium">
+    小壁虎老師製作
+</footer>
+
+<div id="resultArea" class="hidden bg-gray-900 bg-opacity-90 fixed inset-0 flex items-center justify-center z-50" onclick="closeResult()">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full text-center relative animate-pop" onclick="event.stopPropagation()">
+        <button onclick="closeResult()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">✕</button>
+        <div class="text-6xl mb-4">🎉</div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-4">恭喜中獎人</h2>
+        <ul id="winnerList" class="space-y-3 text-2xl font-bold text-teal-600 mb-6 max-h-60 overflow-y-auto"></ul>
+        <button onclick="closeResult()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-full font-bold">關閉視窗</button>
+    </div>
+</div>
+
+<script>
+    // 核心邏輯 (V3.1 強力版)
+    function isSystemLine(text) {
+        const garbageKeywords = [
+            "回覆", "發送訊息", "隱藏", "編輯", "讚", "查看更多", 
+            "作者", "翻譯年糕", "相關留言", "所有留言", "最相關", "篩選", "頭號粉絲",
+            "Reply", "Message", "Hide", "Edited", "Like", "See more", "Top fan"
+        ];
+        if (garbageKeywords.some(k => text === k || text.startsWith(k))) return true;
+        if (/^(\d+\s*(天|小時|分鐘|週|年|d|h|m|y|w)|剛剛|Just now)/i.test(text)) return true;
+        return false;
+    }
+
+    function processData() {
+        const rawText = document.getElementById('rawInput').value;
+        const requiredKeyword = document.getElementById('requiredKeyword').value.trim();
+        const autoDedupe = document.getElementById('autoDedupe').checked;
+        const statusMsg = document.getElementById('statusMsg');
+        
+        if (!rawText) { alert("請貼上原始資料！"); return; }
+        if (!requiredKeyword) { alert("請輸入要檢查的關鍵字！"); return; }
+
+        let lines = rawText.split('\n');
+        let validList = [];
+        let rejectedList = [];
+        let buffer = []; 
+        let algoCount = 0;
+
+        // 演算法 A
+        lines.forEach(line => {
+            let text = line.trim();
+            if (!text) return; 
+
+            if (isSystemLine(text)) {
+                if (buffer.length > 0) {
+                    let name = buffer[0]; 
+                    let commentContent = buffer.length > 1 ? buffer.slice(1).join(" ") : buffer[0];
+                    if (commentContent.includes(requiredKeyword)) {
+                        validList.push(name);
+                    } else {
+                        if(name.includes(requiredKeyword)) validList.push(name);
+                        else rejectedList.push(`${name} (內容: ${commentContent})`);
+                    }
+                    algoCount++;
+                    buffer = []; 
+                }
+            } else {
+                buffer.push(text);
+            }
+        });
+        
+        if (buffer.length > 0) {
+            let name = buffer[0];
+            let commentContent = buffer.slice(1).join(" ");
+            if (commentContent.includes(requiredKeyword)) {
+                validList.push(name);
+            } else {
+                 if(name.includes(requiredKeyword)) validList.push(name);
+                 else rejectedList.push(`${name} (內容: ${commentContent})`);
+            }
+            algoCount++;
+        }
+
+        // 演算法 B (救援模式)
+        if (algoCount < 2 && lines.length > 5) {
+            statusMsg.innerText = "⚠️ 偵測到格式異常，切換至救援模式 B";
+            statusMsg.className = "text-xs text-center text-orange-500 mb-4 font-bold";
+            validList = [];
+            rejectedList = [];
+            for (let i = 0; i < lines.length; i++) {
+                let text = lines[i].trim();
+                if (text.includes(requiredKeyword)) {
+                    let potentialName = (i > 0) ? lines[i-1].trim() : text;
+                    if (isSystemLine(potentialName) && i > 1) potentialName = lines[i-2].trim();
+                    if (potentialName !== requiredKeyword) validList.push(potentialName);
+                }
+            }
+            rejectedList = ["(救援模式下無法精確列出剔除者)"];
+        } else {
+            statusMsg.innerText = "✅ 標準模式執行成功";
+            statusMsg.className = "text-xs text-center text-green-600 mb-4";
+        }
+
+        if (autoDedupe) validList = [...new Set(validList)];
+
+        document.getElementById('finalList').value = validList.join('\n');
+        document.getElementById('rejectedList').value = rejectedList.join('\n');
+        document.getElementById('count').innerText = validList.length;
+        document.getElementById('rejectedCount').innerText = rejectedList.length + "人";
+    }
+
+    document.getElementById('finalList').addEventListener('input', function() {
+        const lines = this.value.split('\n').filter(l => l.trim() !== '');
+        document.getElementById('count').innerText = lines.length;
+    });
+
+    function drawWinner() {
+        const text = document.getElementById('finalList').value;
+        const drawCount = parseInt(document.getElementById('drawCount').value) || 1;
+        const resultArea = document.getElementById('resultArea');
+        const winnerList = document.getElementById('winnerList');
+        let candidates = text.split('\n').map(n => n.trim()).filter(n => n !== '');
+
+        if (candidates.length === 0) { alert("沒有合格名單！"); return; }
+        if (candidates.length < drawCount) { alert("名單人數不足！"); return; }
+
+        for (let i = candidates.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        
+        winnerList.innerHTML = candidates.slice(0, drawCount).map(w => `<li>${w}</li>`).join('');
+        resultArea.classList.remove('hidden');
+    }
+
+    function closeResult() { document.getElementById('resultArea').classList.add('hidden'); }
+</script>
+
+</body>
+</html>
